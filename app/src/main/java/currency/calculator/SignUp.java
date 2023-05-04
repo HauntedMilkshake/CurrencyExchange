@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.media.Image;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -35,6 +36,8 @@ public class SignUp extends AppCompatActivity {
         back.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
+                Log.d("SignUp", "Button clicked");
+
                 Intent intent = new Intent(SignUp.this, MainActivity.class);
                 startActivity(intent);
             }
@@ -67,16 +70,5 @@ public class SignUp extends AppCompatActivity {
                 }
             }
         });
-
-        // Gets the data repository in write mode
-        //SQLiteDatabase db = MyDatabaseHelper;
-                //.getWritableDatabase();
-
-        ContentValues values = new ContentValues();
-        //
-        //values.put(FeedEntry.COLUMN_NAME_TITLE, title);
-        //values.put(FeedEntry.COLUMN_NAME_SUBTITLE, subtitle);
-
-        //long newRowId = db.insert(FeedEntry.TABLE_NAME, null, values);
     }
 }

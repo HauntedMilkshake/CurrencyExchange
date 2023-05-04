@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.view.View.OnClickListener;
@@ -29,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
         signup.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
+                Log.d("MainActivity", "Button clicked");
                 Intent intent = new Intent(MainActivity.this, SignUp.class);
                 startActivity(intent);
             }
@@ -40,16 +42,5 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
-
-
     }
-//    public void signup(){
-//        Intent i = new Intent(MainActivity.this, SignUp.class);
-//        startActivity(i);
-//    }
-//
-//    public void login(){
-//        Intent i = new Intent(MainActivity.this, LogIn.class);
-//        startActivity(i);
-//    }
 }
