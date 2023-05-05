@@ -54,7 +54,7 @@ public class SignUp extends AppCompatActivity {
                 }else if(pass.equals(cp)){
                     Boolean checkuser = db.checkUsername(user);
                     if(checkuser == false){
-                        Boolean insert = db.insertData(user, pass);
+                        Boolean insert = db.insertUser(user, pass);
                         if(insert == true){
                             Toast.makeText(SignUp.this, "Sign up successful", Toast.LENGTH_SHORT).show();
                             Intent intent = new Intent(getApplicationContext(), LogIn.class);

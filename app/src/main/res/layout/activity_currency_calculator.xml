@@ -106,7 +106,7 @@
         tools:layout_editor_absoluteY="261dp" />
 
     <Button
-        android:id="@+id/button2"
+        android:id="@+id/check_for_changes"
         android:layout_width="108dp"
         android:layout_height="50dp"
         android:layout_marginLeft="160dp"

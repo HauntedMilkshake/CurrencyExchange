@@ -39,9 +39,12 @@ public class LogIn extends AppCompatActivity {
                 if(TextUtils.isEmpty(user) || TextUtils.isEmpty(pass)){
                     Toast.makeText(LogIn.this, "All fields required", Toast.LENGTH_SHORT).show();
                 }else{
-                    Boolean checkPassword = db.checkUserPasssword(user, pass);
+                    Boolean checkPassword = db.checkUserPassword(user, pass);
                     if(checkPassword == true){
                         Toast.makeText(LogIn.this, "Login successful", Toast.LENGTH_SHORT).show();
+                        getSharedPreferences("PREFERENCE", MODE_PRIVATE).edit()
+                                .putString("username", user)
+                                .apply();
                         Intent intent = new Intent(getApplicationContext(), CurrencyCalculator.class);
                         startActivity(intent);
                     }else{
