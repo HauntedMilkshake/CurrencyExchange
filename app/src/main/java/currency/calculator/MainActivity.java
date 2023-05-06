@@ -2,7 +2,6 @@ package currency.calculator;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -11,12 +10,13 @@ import android.widget.Button;
 import android.view.View.OnClickListener;
 import android.widget.ImageButton;
 
-import java.security.Signature;
-
+/**
+ * MainActivity класът представлява основната активност на приложението.
+ * Тя съдържа бутони за регистрация и вход на потребителите.
+ */
 public class MainActivity extends AppCompatActivity {
 
     Button signup, login;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,7 +26,7 @@ public class MainActivity extends AppCompatActivity {
         signup = findViewById(R.id.signup);
         login = findViewById(R.id.login);
 
-
+        // Обработва натискането на бутона за регистрация
         signup.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
@@ -35,6 +35,8 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
+        // Обработва натискането на бутона за вход
         login.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){

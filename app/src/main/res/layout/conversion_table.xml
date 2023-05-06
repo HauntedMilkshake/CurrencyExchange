@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="8dp">
+
+    <TextView
+        android:id="@+id/id"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#ccc7ba"
+        android:text="ID"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/user_id"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="16dp"
+        android:text="UID"
+        android:textColor="#ccc7ba"
+        android:textSize="20sp" />
+
+    <TextView
+        android:id="@+id/conversion_from"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="con_from"
+        android:textColor="#ccc7ba"
+        android:textSize="20sp"
+        android:layout_marginLeft="16dp" />
+
+    <TextView
+        android:id="@+id/conversion_to"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="con_to"
+        android:textColor="#ccc7ba"
+        android:textSize="20sp"
+        android:layout_marginLeft="16dp" />
+
+    <TextView
+        android:id="@+id/conversion_amount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="con_amount"
+        android:textColor="#ccc7ba"
+        android:textSize="20sp"
+        android:layout_marginLeft="16dp" />
+</LinearLayout>

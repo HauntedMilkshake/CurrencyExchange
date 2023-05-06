@@ -15,6 +15,10 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
+/*
+ * SignUp класът представлява активността за регистрация на потребителите.
+ * Тя съдържа полета за въвеждане на потребителско име, парола и потвърждение на паролата.
+ */
 public class SignUp extends AppCompatActivity {
     ImageButton back;
     Button signup;
@@ -33,6 +37,7 @@ public class SignUp extends AppCompatActivity {
         password = findViewById(R.id.password);
         confirm_password = findViewById(R.id.confirm_password);
         db = new MyDatabaseHelper(this);
+
         back.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
@@ -42,6 +47,7 @@ public class SignUp extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
         signup.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
@@ -50,23 +56,23 @@ public class SignUp extends AppCompatActivity {
                 String cp = confirm_password.getText().toString();
 
                 if(TextUtils.isEmpty(user) || TextUtils.isEmpty(pass) || TextUtils.isEmpty(cp)){
-                    Toast.makeText(SignUp.this, "All fields required!", Toast.LENGTH_LONG).show();
-                }else if(pass.equals(cp)){
-                    Boolean checkuser = db.checkUsername(user);
-                    if(checkuser == false){
+                    Toast.makeText(SignUp.this, "Всички полета са задължителни!", Toast.LENGTH_LONG).show();
+                } else if(pass.equals(cp)){
+                    Boolean checkUser = db.checkUsername(user);
+                    if(checkUser == false){
                         Boolean insert = db.insertUser(user, pass);
                         if(insert == true){
-                            Toast.makeText(SignUp.this, "Sign up successful", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(SignUp.this, "Успешна регистрация", Toast.LENGTH_SHORT).show();
                             Intent intent = new Intent(getApplicationContext(), LogIn.class);
                             startActivity(intent);
-                        }else{
-                            Toast.makeText(SignUp.this, "Try again", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(SignUp.this, "Опитайте отново", Toast.LENGTH_SHORT).show();
                         }
-                    }else{
-                        Toast.makeText(SignUp.this, "There is a user with the same name", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(SignUp.this, "Вече съществува потребител със същото име", Toast.LENGTH_SHORT).show();
                     }
-                }else{
-                    Toast.makeText(SignUp.this, "passwords must match!", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(SignUp.this, "Паролите трябва да съвпадат!", Toast.LENGTH_SHORT).show();
                 }
             }
         });
