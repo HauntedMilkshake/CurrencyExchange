@@ -16,6 +16,9 @@
         android:theme="@style/Theme.CurrencyCalculator"
         tools:targetApi="31">
         <activity
+            android:name=".UserFavouritesTable"
+            android:exported="false" />
+        <activity
             android:name=".UserConversionTable"
             android:exported="false" />
         <activity

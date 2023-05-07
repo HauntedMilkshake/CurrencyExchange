@@ -6,31 +6,38 @@
     android:padding="8dp">
 
     <TextView
-        android:id="@+id/user_id"
+        android:id="@+id/fav_id"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textColor="#ccc7ba"
-        android:text="ID"
+        android:text="fav_id"
         android:textSize="20sp" />
 
     <TextView
-        android:id="@+id/user_name"
+        android:id="@+id/fav_con_from"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Username"
+        android:text="fav_con_from"
         android:textColor="#ccc7ba"
         android:textSize="20sp"
         android:layout_marginLeft="16dp" />
 
     <TextView
-        android:id="@+id/user_password"
+        android:id="@+id/fav_con_to"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Password"
-        android:textColor="#ccc7ba"
+        android:layout_marginLeft="16dp"
+        android:text="fav_con_to"
 
-        android:textSize="20sp"
-        android:layout_marginLeft="16dp" />
+        android:textColor="#ccc7ba"
+        android:textSize="20sp" />
+
+    <ImageButton
+        android:id="@+id/delete_favorite"
+        android:layout_width="22dp"
+        android:layout_height="23dp"
+
+        android:src="@android:drawable/ic_delete" />
 
     <ImageButton
         android:id="@+id/editButton"
@@ -39,4 +46,5 @@
         android:background="?android:attr/selectableItemBackground"
         android:contentDescription="Edit"
         android:src="@android:drawable/ic_menu_edit" />
+
 </LinearLayout>

@@ -11,32 +11,34 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
-public class UserTableActivity extends AppCompatActivity {
+public class UserFavouritesTable extends AppCompatActivity {
     Button back;
+
     MyDatabaseHelper myDatabaseHelper = new MyDatabaseHelper(this);
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_edit_database);
+        setContentView(R.layout.activity_user_favourites_table);
 
         SharedPreferences sharedPreferences = getSharedPreferences("PREFERENCE", MODE_PRIVATE);
         String loggedInUsername = sharedPreferences.getString("username", "");
 
-        back = findViewById(R.id.backToConverison);
-
-        Cursor cursor = myDatabaseHelper.getUserByUsername(loggedInUsername);
-        UserAdapter userAdapter = new UserAdapter(this, cursor);
-        RecyclerView recyclerView = findViewById(R.id.viewUserTable);
+        int userID = myDatabaseHelper.getUserId(loggedInUsername);
+        Cursor cursor = myDatabaseHelper.readFavourites(userID);
+        FavouritesAdapter favouritesAdapter = new FavouritesAdapter(cursor, this);
+        RecyclerView recyclerView = findViewById(R.id.favouritesTable);
         recyclerView.setLayoutManager(new LinearLayoutManager(this)); // Add this line
-        recyclerView.setAdapter(userAdapter);
+        recyclerView.setAdapter(favouritesAdapter);
+
+        back = findViewById(R.id.backToConverison);
 
         back.setOnClickListener(new View.OnClickListener(){
             @Override
-            public void onClick(View view){
-                Intent intent = new Intent(UserTableActivity.this, CurrencyCalculator.class);
+            public void onClick(View view) {
+                Intent intent = new Intent(UserFavouritesTable.this, CurrencyCalculator.class);
                 startActivity(intent);
             }
         });
     }
-
 }

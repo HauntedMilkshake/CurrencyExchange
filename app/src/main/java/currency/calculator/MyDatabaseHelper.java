@@ -24,6 +24,8 @@ public class MyDatabaseHelper extends SQLiteOpenHelper {
             "CREATE TABLE conversions (" +
                     "_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                     "user_id INTEGER, " +
+                    "initial_amount REAL, " +
+                    "conversion_rate REAL, " +
                     "conversion_from TEXT, " +
                     "conversion_to TEXT, " +
                     "conversion_amount REAL, " +
@@ -32,8 +34,10 @@ public class MyDatabaseHelper extends SQLiteOpenHelper {
     public static final String CREATE_FAVOURITES_TABLE =
             "CREATE TABLE favourites (" +
                     "_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    "user_id INTEGER, " +
                     "from_currency_fav TEXT, " +
-                    "to_currency_fav TEXT " +
+                    "to_currency_fav TEXT, " +
+                    "FOREIGN KEY(user_id) REFERENCES users(_id)" +
                     ")";
 
     // Конструктор на базата данни
@@ -135,10 +139,19 @@ public class MyDatabaseHelper extends SQLiteOpenHelper {
         }
     }
     //CRUD за конверсиите
-    public boolean insertConversion(int userID, String convert_from, String convert_to, double conversion_amount) {
+    public Cursor getAllUserConversions(int userId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT * FROM conversions WHERE user_id = ?";
+        Cursor cursor = db.rawQuery(query, new String[]{String.valueOf(userId)});
+        return cursor;
+    }
+
+    public boolean insertConversion(int userID, double initialAmount, double conversion_rate, String convert_from, String convert_to, double conversion_amount) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
         contentValues.put("user_id", userID);
+        contentValues.put("initial_amount", initialAmount);
+        contentValues.put("conversion_rate", conversion_rate);
         contentValues.put("conversion_from", convert_from);
         contentValues.put("conversion_to", convert_to);
         contentValues.put("conversion_amount", conversion_amount);
@@ -146,21 +159,26 @@ public class MyDatabaseHelper extends SQLiteOpenHelper {
         return result != -1;
     }
 
-    public Cursor readConversions(int id) {
+    public Cursor readConversions(int user_id) {
         SQLiteDatabase db = this.getReadableDatabase();
-        return db.rawQuery("SELECT * FROM conversions WHERE _id=?", new String[]{String.valueOf(id)});
+        return db.rawQuery("SELECT * FROM conversions WHERE user_id=?", new String[]{String.valueOf(user_id)});
     }
 
-    public boolean updateConversions(int userID, String convert_from, String convert_to, double conversion_amount) {
+
+    public boolean updateConversions(int conversionId, double initialAmount, double conversionRate, int userID, String convert_from, String convert_to, double conversion_amount) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
         contentValues.put("user_id", userID);
+        contentValues.put("initial_amount", initialAmount);
+        contentValues.put("conversion_rate", conversionRate);
         contentValues.put("conversion_from", convert_from);
         contentValues.put("conversion_to", convert_to);
         contentValues.put("conversion_amount", conversion_amount);
-        int result = db.update("conversions", contentValues, "_id=?", new String[]{String.valueOf(userID)});
+        int result = db.update("conversions", contentValues, "_id=?", new String[]{String.valueOf(conversionId)});
         return result > 0;
     }
+
+
 
     public boolean deleteConversions(int id){
         SQLiteDatabase db = this.getWritableDatabase();
@@ -168,23 +186,40 @@ public class MyDatabaseHelper extends SQLiteOpenHelper {
         return result > 0;
     }
     // CRUD за любимите транзакции
-    public boolean insertFavourites(String from, String to) {
+    public int getFavouritesID(String convert_from) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT _id FROM favourites WHERE from_currency_fav=?", new String[]{convert_from});
+        if (cursor != null && cursor.moveToFirst()) {
+            int userId = cursor.getInt(0);
+            cursor.close();
+            return userId;
+        } else {
+            return -1;  // връща -1 ако потребителят не е намерен
+        }
+    }
+    public boolean insertFavourites(int userID, String from, String to) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
+        contentValues.put("user_id", userID);
         contentValues.put("from_currency_fav", from);
         contentValues.put("to_currency_fav", to);
         long result = db.insert("favourites", null, contentValues);
         return result != -1;
     }
 
-    public Cursor readFavourites(int id) {
+
+    public Cursor readFavourites(int user_id) {
+
         SQLiteDatabase db = this.getReadableDatabase();
-        return db.rawQuery("SELECT * FROM favourites WHERE _id=?", new String[]{String.valueOf(id)});
+        return db.rawQuery("SELECT * FROM favourites WHERE user_id=?", new String[]{String.valueOf(user_id)});
+
     }
 
-    public boolean updateFavourites(int id, String from, String to) {
+    public boolean updateFavourites(int id, int user_id, String from, String to) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
+        contentValues.put("user_id", user_id);
+        contentValues.put("to_currency_fav", to);
         contentValues.put("from_currency_fav", from);
         contentValues.put("to_currency_fav", to);
         int result = db.update("favourites", contentValues, "_id=?", new String[]{String.valueOf(id)});

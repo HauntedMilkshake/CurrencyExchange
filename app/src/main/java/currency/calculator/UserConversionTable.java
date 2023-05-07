@@ -24,12 +24,12 @@ public class UserConversionTable extends AppCompatActivity {
         SharedPreferences sharedPreferences = getSharedPreferences("PREFERENCE", MODE_PRIVATE);
         String loggedInUsername = sharedPreferences.getString("username", "");
 
-
-        Cursor cursor = myDatabaseHelper.getUserByUsername(loggedInUsername);
-        UserAdapter userAdapter = new UserAdapter(cursor);
+        int userID = myDatabaseHelper.getUserId(loggedInUsername);
+        Cursor cursor = myDatabaseHelper.getAllUserConversions(userID);
+        ConversionAdapter conversionAdapter = new ConversionAdapter(this, cursor);
         RecyclerView recyclerView = findViewById(R.id.conversionTable);
         recyclerView.setLayoutManager(new LinearLayoutManager(this)); // Add this line
-        recyclerView.setAdapter(userAdapter);
+        recyclerView.setAdapter(conversionAdapter);
 
         back = findViewById(R.id.backToConverison);
 

@@ -9,30 +9,30 @@
 
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/conversionTable"
-        android:layout_width="393dp"
-        android:layout_height="552dp"
+        android:id="@+id/favouritesTable"
+        android:layout_width="320dp"
+        android:layout_height="472dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.494"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.91" />
+        app:layout_constraintVertical_bias="0.891" />
 
     <TextView
-        android:id="@+id/conversionText"
+        android:id="@+id/favouriteText"
         android:layout_width="198dp"
         android:layout_height="83dp"
+        android:layout_marginTop="80dp"
         android:gravity="center"
-        android:text="User's conversion table"
+        android:text="User's favourites table"
         android:textColor="#ccc7ba"
         android:textSize="25sp"
         android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@+id/conversionTable"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.497"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.87" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <Button
         android:id="@+id/backToConverison"

@@ -4,8 +4,11 @@ package currency.calculator;
 // Импортиране на необходимите библиотеки
 import static android.content.ContentValues.TAG;
 
+import static java.lang.Double.parseDouble;
+
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -14,6 +17,7 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -36,6 +40,8 @@ public class CurrencyCalculator extends AppCompatActivity {
     Spinner convert_from;
     Spinner convert_to;
     Button convert, check_for_changes, userTable, favTable, conversionTable;
+    ImageButton favourite;
+    boolean isClicked = false;
 
     // Променлива за работа с базата данни
     private MyDatabaseHelper db;
@@ -45,11 +51,11 @@ public class CurrencyCalculator extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_currency_calculator);
+        favourite = findViewById(R.id.favourite);
         db = new MyDatabaseHelper(this);
         convert_from = findViewById(R.id.convert_from);
         convert_to = findViewById(R.id.convert_to);
         convert = findViewById(R.id.convert);
-        check_for_changes = findViewById(R.id.check_for_changes);
         userTable = findViewById(R.id.goToUserPage);
         favTable = findViewById(R.id.goToFavouritesPage);
         conversionTable = findViewById(R.id.goToConversionPage);
@@ -65,12 +71,6 @@ public class CurrencyCalculator extends AppCompatActivity {
         // Извличане на валутните курсове
         fetchExchangeRates();
 
-        // Добавяне на слушател за кликване на бутона за проверка на промени
-        check_for_changes.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View v){ checkForChanges(); }
-        });
-
         userTable.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
@@ -81,9 +81,8 @@ public class CurrencyCalculator extends AppCompatActivity {
         favTable.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
-                // to do go to favTable and add favourites
 
-                Intent intent = new Intent(CurrencyCalculator.this, UserTableActivity.class);
+                Intent intent = new Intent(CurrencyCalculator.this, UserFavouritesTable.class);
                 startActivity(intent);
             }
         });
@@ -95,121 +94,45 @@ public class CurrencyCalculator extends AppCompatActivity {
                 startActivity(intent);
             }
         });
-    }
-
-    // Метод за извличане на конверсиите от базата данни
-    public Cursor readConversions(int userId, MyDatabaseHelper database) {
-        SQLiteDatabase db = database.getReadableDatabase();
-        return db.rawQuery("SELECT * FROM conversions WHERE user_id=? ORDER BY _id DESC LIMIT 1",
-                new String[]{String.valueOf(userId)});
-    }
-
-    // Метод за проверка на промени във валутните курсове
-    public void checkForChanges() {
-        // Извличане на потребителското име от локалната база данни
-        String username = getSharedPreferences("PREFERENCE", MODE_PRIVATE).getString("username", "");
-        int userId = db.getUserId(username);
-
-        // Извличане на текущите детайли за конверсията
-        Cursor cursor = db.readConversions(userId);
-        cursor.moveToFirst();
-        int convertFromIndex = cursor.getColumnIndex("conversion_from");
-        int convertToIndex = cursor.getColumnIndex("conversion_to");
-        int amountIndex = cursor.getColumnIndex("conversion_amount");
-
-        String convert_from = convertFromIndex != -1? cursor.getString(convertFromIndex) : null;
-        String convert_to = convertToIndex != -1 ? cursor.getString(convertToIndex) : null;
-        Double localAmount = amountIndex != -1 ? cursor.getDouble(amountIndex) : null;
-
-
-        // Получаване на последната конверсия
-        Conversion conversion = getLastConversion(db, userId, convert_from, convert_to);
-        cursor.close(); // Затваряне на курсора след използване
-        if (conversion == null) {
-            Toast.makeText(CurrencyCalculator.this, "Няма предишна конверсия от този тип", Toast.LENGTH_SHORT).show();
-        } else {
-
-            // Извличане на текущия валутен курс от сървъра
-            APIInterface apiService = APIClient.getClient().create(APIInterface.class);
-            Call<ExchangeRates> call = apiService.getExchangeRates("3086526c54cd4b09927cb43dcff066fe");
-
-            call.enqueue(new Callback<ExchangeRates>() {
-                @Override
-                public void onResponse(Call<ExchangeRates> call, Response<ExchangeRates> response) {
-                    if (response.isSuccessful()) {
-                        ExchangeRates exchangeRates = response.body();
-                        Map<String, Double> rates = exchangeRates.getRates();
-
-                        double serverRate = rates.get(convert_to) / rates.get(convert_from);
-                        //!
-                        if (serverRate != localAmount) {
-                            new AlertDialog.Builder(CurrencyCalculator.this)
-                                    .setTitle("Конверсионният курс е същият")
-                                    .setMessage("Конверсионният курс за " + convert_from + " към " + convert_to + " е променен от " + localAmount + " на " + serverRate + ". Какво бихте искали да направите?")
-                                    .setPositiveButton("Запазете стария курс", new DialogInterface.OnClickListener() {
-                                        public void onClick(DialogInterface dialog, int id) {
-                                            // Потребителят избра да запази стария курс, така че не правим нищо.
-                                        }
-                                    })
-                                    .setNeutralButton("Обновете с новия курс", new DialogInterface.OnClickListener() {
-                                        public void onClick(DialogInterface dialog, int id) {
-                                            // Потребителят избра да обнови текущия запис с новия курс
-                                            db.updateConversions(userId, convert_from, convert_to, serverRate);
-                                        }
-                                    })
-                                    .setNegativeButton("Дублирайте и актуализирайте", new DialogInterface.OnClickListener() {
-                                        public void onClick(DialogInterface dialog, int id) {
-                                            // Потребителят избра да дублира записа и да актуализира дубликата с новия курс
-                                            db.insertConversion(userId, convert_from, convert_to, serverRate);
-                                        }
-                                    })
-                                    .show();
-                        } else {
-                            Toast.makeText(CurrencyCalculator.this, "Стойностите са еднакви", Toast.LENGTH_SHORT).show();
-
-                        }
-                    }
-                }
-
-                @Override
-                public void onFailure(Call<ExchangeRates> call, Throwable t) {
-                    Log.e(TAG, "Грешка при извличане на валутните курсове: " + t.getMessage());
-                }
-            });
-        }
-    }
-    /*
-     * Връща последната конверсия на валута за потребител, базирано на userId, convert_from и convert_to.
-     */
-    public Conversion getLastConversion(MyDatabaseHelper myDatabaseHelper, int userId, String convert_from, String convert_to) {
-        // Отваря четлива връзка с базата данни
-        SQLiteDatabase db = myDatabaseHelper.getReadableDatabase();
-
-        // Изпълнява заявка към базата данни, за да получи последната конверсия за потребителя
-        Cursor cursor = db.rawQuery("SELECT * FROM conversions WHERE user_id=? AND conversion_from=? AND conversion_to=? ORDER BY _id DESC LIMIT 1",
-                new String[]{String.valueOf(userId), convert_from, convert_to});
-
-        // Проверява дали курсорът има поне един резултат и се позиционира на първия резултат
-        if (cursor != null && cursor.moveToFirst()) {
-            int idColumnIndex = cursor.getColumnIndex("_id");
-            int amountColumnIndex = cursor.getColumnIndex("conversion_amount");
-
-            // Ако има данни в колоните, създава нов обект Conversion с получените данни
-            if (idColumnIndex != -1 && amountColumnIndex != -1) {
-                int id = cursor.getInt(idColumnIndex);
-                String amount = cursor.getString(amountColumnIndex);
-                cursor.close();
-                return new Conversion(id, userId, convert_from, convert_to, amount);
+        favourite.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view){
+                setFavourite();
             }
-        }
+        });
+    }
+    private void setFavourite(){
+        String conversionFrom = convert_from.getSelectedItem().toString();
+        String conversionTo = convert_to.getSelectedItem().toString();
+        SharedPreferences sharedPreferences = getSharedPreferences("PREFERENCE", MODE_PRIVATE);
+        String loggedInUsername = sharedPreferences.getString("username", "");
+        int userID = db.getUserId(loggedInUsername);
+        if(!isClicked){
+            if(!conversionFrom.equals(conversionTo)) {
+                boolean success = db.insertFavourites(userID, conversionFrom, conversionTo);
 
-        // Затваря курсора, ако е отворен
-        if(cursor != null){
-            cursor.close();
-        }
+                if (success) {
+                    Toast.makeText(CurrencyCalculator.this, "Conversion added to favorites", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(CurrencyCalculator.this, "Failed to add conversion to favorites", Toast.LENGTH_SHORT).show();
+                }
+                favourite.setImageResource(android.R.drawable.btn_star_big_on);
+                isClicked = true;
+            }else{
+                Toast.makeText(CurrencyCalculator.this, "Chose different conversion to favourite :)", Toast.LENGTH_SHORT).show();
 
-        // Връща null, ако не е намерена последна конверсия
-        return null;
+            }
+        }else{
+            int favID = db.getFavouritesID(conversionFrom);
+            boolean success = db.deleteFavourites(favID);
+            if (success) {
+                Toast.makeText(CurrencyCalculator.this, "Conversion deleted from favorites", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(CurrencyCalculator.this, "Failed to delete conversion from favorites", Toast.LENGTH_SHORT).show();
+            }
+            favourite.setImageResource(android.R.drawable.btn_star_big_off);
+            isClicked = false;
+        }
     }
 
 
@@ -218,25 +141,25 @@ public class CurrencyCalculator extends AppCompatActivity {
      * Извършва конверсия на валута, като използва избраните валути от потребителя и въведената сума.
      */
     private void performConversion() {
-        // Извлича избраните валути от спинерите
+        // Extract the selected currencies from the spinners
         String currency1 = convert_from.getSelectedItem().toString();
         String currency2 = convert_to.getSelectedItem().toString();
 
-        // Връзка към полетата за въвеждане на сумите
+        // Reference the input fields for the amounts
         EditText toConvert = findViewById(R.id.convert_from_ammount);
         EditText converted = findViewById(R.id.convert_to_ammount);
 
-        // Проверява дали избраните валути са различни
+        // Check if the selected currencies are different
         if (currency1.equals(currency2)) {
             Toast.makeText(this, "Моля, изберете различни валути.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Създава API услуга за извличане на валутните курсове
+        // Create an API service to fetch the exchange rates
         APIInterface apiService = APIClient.getClient().create(APIInterface.class);
         Call<ExchangeRates> call = apiService.getExchangeRates("3086526c54cd4b09927cb43dcff066fe");
 
-        // Изпраща заявка към API за получаване на курсовете
+        // Send a request to the API to get the rates
         call.enqueue(new Callback<ExchangeRates>() {
             @Override
             public void onResponse(Call<ExchangeRates> call, Response<ExchangeRates> response) {
@@ -250,7 +173,7 @@ public class CurrencyCalculator extends AppCompatActivity {
 
                     double inputValue;
                     try {
-                        inputValue = Double.parseDouble(toConvert.getText().toString());
+                        inputValue = parseDouble(toConvert.getText().toString());
                     } catch (NumberFormatException e) {
                         Toast.makeText(CurrencyCalculator.this, "Моля, въведете валидно число.", Toast.LENGTH_SHORT).show();
                         return;
@@ -262,7 +185,10 @@ public class CurrencyCalculator extends AppCompatActivity {
                     String username = getSharedPreferences("PREFERENCE", MODE_PRIVATE).getString("username", "");
                     int userId = db.getUserId(username);
 
-                    boolean insertResult = db.insertConversion(userId, currency1, currency2, convertedValue);
+                    // Insert the initial amount and the conversion rate into the database
+                    //formatting
+
+                    boolean insertResult = db.insertConversion(userId, Double.parseDouble(String.format("%.2f", inputValue)), Double.parseDouble(String.format("%.2f", conversionRate)), currency1, currency2, Double.parseDouble(String.format("%.2f", convertedValue)));
                 }
             }
 
@@ -272,6 +198,7 @@ public class CurrencyCalculator extends AppCompatActivity {
             }
         });
     }
+
 
     /*
      * Извлича валутните курсове от API и попълва спинерите с валутите.
