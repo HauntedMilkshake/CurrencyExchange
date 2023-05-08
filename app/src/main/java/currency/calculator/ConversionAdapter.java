@@ -38,11 +38,14 @@ public class ConversionAdapter extends RecyclerView.Adapter<ConversionAdapter.Vi
     private Context context;
     private MyDatabaseHelper db;
 
+    private UserConversionTable userActivity;
+
     // Конструктор, който получава контекста и Cursor
-    public ConversionAdapter(Context context, Cursor cursor) {
+    public ConversionAdapter(Context context, Cursor cursor, UserConversionTable userActivity  ) {
         this.context = context;
         this.cursor = cursor;
         this.db = new MyDatabaseHelper(context);
+        this.userActivity = userActivity;
     }
 
     // Създаване на нов обект ViewHolder чрез надуване на макета на изгледа
@@ -76,6 +79,7 @@ public class ConversionAdapter extends RecyclerView.Adapter<ConversionAdapter.Vi
             delete = holder.itemView.findViewById(R.id.delete_conversion);
             itemView = holder.itemView.findViewById(R.id.editButton);
             checkForChanges = holder.itemView.findViewById(R.id.checkForChangesButton);
+
 
             // Създаване на слушател за натискане на бутона "delete"
             delete.setOnClickListener(new View.OnClickListener() {
@@ -183,14 +187,14 @@ public class ConversionAdapter extends RecyclerView.Adapter<ConversionAdapter.Vi
             checkForChanges.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    checkForChanges(context, ConversionAdapter.this);
+                    checkForChanges(userActivity, ConversionAdapter.this, position);
                 }
             });
         }
     }
 
     // Метод за проверка на промени във валутните курсове
-    public void checkForChanges(Context context, ConversionAdapter adapter) {
+    public void checkForChanges(Context context, ConversionAdapter adapter, int position) {
         // Извличане на потребителското име от локалната база данни
         String username = context.getSharedPreferences("PREFERENCE", Context.MODE_PRIVATE).getString("username", "");
         int userId = db.getUserId(username);
@@ -198,6 +202,7 @@ public class ConversionAdapter extends RecyclerView.Adapter<ConversionAdapter.Vi
         // Извличане на текущите детайли за конверсията
         Cursor cursor = db.readConversions(userId);
         cursor.moveToFirst();
+        cursor.moveToPosition(position);
         int initialAmountIndex = cursor.getColumnIndex("initial_amount");
         int convertRateIndex = cursor.getColumnIndex("conversion_rate");
         int convertFromIndex = cursor.getColumnIndex("conversion_from");
@@ -211,11 +216,11 @@ public class ConversionAdapter extends RecyclerView.Adapter<ConversionAdapter.Vi
         String convert_from = convertFromIndex != -1 ? cursor.getString(convertFromIndex) : null;
         String convert_to = convertToIndex != -1 ? cursor.getString(convertToIndex) : null;
         Double convert_amount = amountIndex !=-1 ? cursor.getDouble(amountIndex) : null;
-        Double localRate = amountIndex != -1 ? cursor.getDouble(convertRateIndex) : null;
+        Double localRate = convertRateIndex != -1 ? cursor.getDouble(convertRateIndex) : null;
 
         final Double final_initial_amount = Double.parseDouble(String.format("%.2f", initial_amount));
-        convert_rate = Double.parseDouble(String.format("%.2f", convert_rate));
-        convert_amount = Double.parseDouble(String.format("%.2f", convert_amount));
+        //convert_rate = Double.parseDouble(String.format("%.2f", convert_rate));
+        //convert_amount = Double.parseDouble(String.format("%.2f", convert_amount));
 
         // Получаване на последната конверсия
         Conversion conversion = getLastConversion(db, userId, convert_from, convert_to);
@@ -228,7 +233,7 @@ public class ConversionAdapter extends RecyclerView.Adapter<ConversionAdapter.Vi
             APIInterface apiService = APIClient.getClient().create(APIInterface.class);
             Call<ExchangeRates> call = apiService.getExchangeRates("3086526c54cd4b09927cb43dcff066fe");
 
-            Double finalLocalRate = localRate;
+            //Double finalLocalRate = localRate;
             call.enqueue(new Callback<ExchangeRates>() {
                 @Override
                 public void onResponse(Call<ExchangeRates> call, Response<ExchangeRates> response) {
@@ -241,15 +246,17 @@ public class ConversionAdapter extends RecyclerView.Adapter<ConversionAdapter.Vi
                         //!= така трябва да са по задание, за да са различни
                         //== така трябва да са ако искате да ги покажете
 
-                        if (serverRate != finalLocalRate) {
+                        if (serverRate == localRate) {
+                            serverRate = localRate;
                             final Double final_serverRate = serverRate;
                             new AlertDialog.Builder(context)
                                     .setTitle("Конверсионният курс не е същият")
-                                    .setMessage("Конверсионният курс за " + convert_from + " към " + convert_to + " е променен от " + finalLocalRate + " на " + serverRate + ". Какво бихте искали да направите?")
+                                    .setMessage("Конверсионният курс за " + convert_from + " към " + convert_to + " е променен от " + localRate + " на " + serverRate + ". Какво бихте искали да направите?")
                                     .setPositiveButton("Запазете стария курс", new DialogInterface.OnClickListener() {
                                         public void onClick(DialogInterface dialog, int id) {
                                             // Потребителят избра да запази стария курс, така че не правим нищо.
-                                            ((UserConversionTable) context).recreate();                                        }
+                                            ((UserConversionTable) context).recreate();
+                                        }
                                     })
                                     .setNeutralButton("Обновете с новия курс", new DialogInterface.OnClickListener() {
                                         public void onClick(DialogInterface dialog, int id) {
@@ -258,25 +265,23 @@ public class ConversionAdapter extends RecyclerView.Adapter<ConversionAdapter.Vi
                                             double newAmount = Double.parseDouble(String.format("%.2f", final_initial_amount*final_serverRate));
                                             Log.d(TAG, "server Rate: " + final_serverRate + " new amount: ");
                                             db.updateConversions(convertID, final_initial_amount, final_serverRate, userId, convert_from, convert_to, newAmount);
-                                            ((UserConversionTable) context).recreate();                                        }
+                                            ((UserConversionTable) context).recreate();
+                                        }
                                     })
                                     .setNegativeButton("Дублирайте и актуализирайте", new DialogInterface.OnClickListener() {
                                         public void onClick(DialogInterface dialog, int id) {
                                             // Потребителят избра да дублира записа и да актуализира дубликата с новия курс
                                             double newAmount = Double.parseDouble(String.format("%.2f", final_initial_amount*final_serverRate));
                                             db.insertConversion(userId, final_initial_amount, final_serverRate, convert_from, convert_to, newAmount);
-                                            ((UserConversionTable) context).recreate();                                        }
+                                            ((UserConversionTable) context).recreate();
+                                        }
                                     })
                                     .show();
-
-
                         } else {
                             Toast.makeText(context, "Стойностите са еднакви", Toast.LENGTH_SHORT).show();
 
                         }
-
                     }
-
                 }
 
                 @Override
@@ -288,22 +293,6 @@ public class ConversionAdapter extends RecyclerView.Adapter<ConversionAdapter.Vi
         }
 
     }
-
-//    private double getUpdatedLocalRate(MyDatabaseHelper db, int userId, String convert_from, String convert_to) {
-//        Cursor updatedCursor = db.readConversions(userId);
-//        updatedCursor.moveToFirst();
-//
-//        while (!updatedCursor.isAfterLast()) {
-//            if (updatedCursor.getString(updatedCursor.getColumnIndex("conversion_from")).equals(convert_from) &&
-//                    updatedCursor.getString(updatedCursor.getColumnIndex("conversion_to")).equals(convert_to)) {
-//                return updatedCursor.getDouble(updatedCursor.getColumnIndex("conversion_rate"));
-//            }
-//            updatedCursor.moveToNext();
-//        }
-//
-//        updatedCursor.close();
-//        return -1; // Return -1 if no matching conversion is found
-//    }
 
     public Conversion getLastConversion(MyDatabaseHelper myDatabaseHelper, int userId, String convert_from, String convert_to) {
         // Отваря четлива връзка с базата данни

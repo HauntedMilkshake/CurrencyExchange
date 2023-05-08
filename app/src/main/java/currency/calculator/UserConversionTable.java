@@ -26,7 +26,7 @@ public class UserConversionTable extends AppCompatActivity {
 
         int userID = myDatabaseHelper.getUserId(loggedInUsername);
         Cursor cursor = myDatabaseHelper.getAllUserConversions(userID);
-        ConversionAdapter conversionAdapter = new ConversionAdapter(this, cursor);
+        ConversionAdapter conversionAdapter = new ConversionAdapter(this, cursor, this);
         RecyclerView recyclerView = findViewById(R.id.conversionTable);
         recyclerView.setLayoutManager(new LinearLayoutManager(this)); // Add this line
         recyclerView.setAdapter(conversionAdapter);
