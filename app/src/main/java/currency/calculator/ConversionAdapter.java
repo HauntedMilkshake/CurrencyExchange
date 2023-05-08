@@ -203,8 +203,9 @@ public class ConversionAdapter extends RecyclerView.Adapter<ConversionAdapter.Vi
         int convertFromIndex = cursor.getColumnIndex("conversion_from");
         int convertToIndex = cursor.getColumnIndex("conversion_to");
         int amountIndex = cursor.getColumnIndex("conversion_amount");
-        int convertID = cursor.getColumnIndex("_id");
+        int convertIDIndex = cursor.getColumnIndex("_id");
 
+        int convertID = cursor.getInt(convertIDIndex);
         Double initial_amount = initialAmountIndex != -1 ? cursor.getDouble(initialAmountIndex) : null;
         Double convert_rate = convertRateIndex != -1 ? cursor.getDouble(convertRateIndex) : null;
         String convert_from = convertFromIndex != -1 ? cursor.getString(convertFromIndex) : null;
@@ -227,6 +228,7 @@ public class ConversionAdapter extends RecyclerView.Adapter<ConversionAdapter.Vi
             APIInterface apiService = APIClient.getClient().create(APIInterface.class);
             Call<ExchangeRates> call = apiService.getExchangeRates("3086526c54cd4b09927cb43dcff066fe");
 
+            Double finalLocalRate = localRate;
             call.enqueue(new Callback<ExchangeRates>() {
                 @Override
                 public void onResponse(Call<ExchangeRates> call, Response<ExchangeRates> response) {
@@ -239,11 +241,11 @@ public class ConversionAdapter extends RecyclerView.Adapter<ConversionAdapter.Vi
                         //!= така трябва да са по задание, за да са различни
                         //== така трябва да са ако искате да ги покажете
 
-                        if (serverRate != localRate) {
+                        if (serverRate != finalLocalRate) {
                             final Double final_serverRate = serverRate;
                             new AlertDialog.Builder(context)
                                     .setTitle("Конверсионният курс не е същият")
-                                    .setMessage("Конверсионният курс за " + convert_from + " към " + convert_to + " е променен от " + localRate + " на " + serverRate + ". Какво бихте искали да направите?")
+                                    .setMessage("Конверсионният курс за " + convert_from + " към " + convert_to + " е променен от " + finalLocalRate + " на " + serverRate + ". Какво бихте искали да направите?")
                                     .setPositiveButton("Запазете стария курс", new DialogInterface.OnClickListener() {
                                         public void onClick(DialogInterface dialog, int id) {
                                             // Потребителят избра да запази стария курс, така че не правим нищо.
@@ -253,15 +255,16 @@ public class ConversionAdapter extends RecyclerView.Adapter<ConversionAdapter.Vi
                                         public void onClick(DialogInterface dialog, int id) {
                                             // Потребителят избра да обнови текущия запис с новия курс
                                             //db.updateConversions(userId, convert_from, convert_to, serverRate);\
-                                            double newRate = Double.parseDouble(String.format("%.2f", final_initial_amount*final_serverRate));
-                                            db.updateConversions(convertID, final_initial_amount, final_serverRate, userId, convert_from, convert_to, newRate);
+                                            double newAmount = Double.parseDouble(String.format("%.2f", final_initial_amount*final_serverRate));
+                                            Log.d(TAG, "server Rate: " + final_serverRate + " new amount: ");
+                                            db.updateConversions(convertID, final_initial_amount, final_serverRate, userId, convert_from, convert_to, newAmount);
                                             ((UserConversionTable) context).recreate();                                        }
                                     })
                                     .setNegativeButton("Дублирайте и актуализирайте", new DialogInterface.OnClickListener() {
                                         public void onClick(DialogInterface dialog, int id) {
                                             // Потребителят избра да дублира записа и да актуализира дубликата с новия курс
-                                            double newRate = Double.parseDouble(String.format("%.2f", final_initial_amount*final_serverRate));
-                                            db.insertConversion(userId, final_initial_amount, final_serverRate, convert_from, convert_to, newRate);
+                                            double newAmount = Double.parseDouble(String.format("%.2f", final_initial_amount*final_serverRate));
+                                            db.insertConversion(userId, final_initial_amount, final_serverRate, convert_from, convert_to, newAmount);
                                             ((UserConversionTable) context).recreate();                                        }
                                     })
                                     .show();
@@ -271,16 +274,36 @@ public class ConversionAdapter extends RecyclerView.Adapter<ConversionAdapter.Vi
                             Toast.makeText(context, "Стойностите са еднакви", Toast.LENGTH_SHORT).show();
 
                         }
+
                     }
+
                 }
 
                 @Override
                 public void onFailure(Call<ExchangeRates> call, Throwable t) {
                     Log.e(TAG, "Грешка при извличане на валутните курсове: " + t.getMessage());
                 }
+
             });
         }
+
     }
+
+//    private double getUpdatedLocalRate(MyDatabaseHelper db, int userId, String convert_from, String convert_to) {
+//        Cursor updatedCursor = db.readConversions(userId);
+//        updatedCursor.moveToFirst();
+//
+//        while (!updatedCursor.isAfterLast()) {
+//            if (updatedCursor.getString(updatedCursor.getColumnIndex("conversion_from")).equals(convert_from) &&
+//                    updatedCursor.getString(updatedCursor.getColumnIndex("conversion_to")).equals(convert_to)) {
+//                return updatedCursor.getDouble(updatedCursor.getColumnIndex("conversion_rate"));
+//            }
+//            updatedCursor.moveToNext();
+//        }
+//
+//        updatedCursor.close();
+//        return -1; // Return -1 if no matching conversion is found
+//    }
 
     public Conversion getLastConversion(MyDatabaseHelper myDatabaseHelper, int userId, String convert_from, String convert_to) {
         // Отваря четлива връзка с базата данни

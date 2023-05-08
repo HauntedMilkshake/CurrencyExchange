@@ -4,6 +4,7 @@ import static android.content.Context.MODE_PRIVATE;
 
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.view.LayoutInflater;
@@ -25,6 +26,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
     private Cursor cursor;
     private ImageButton delete, itemView;
     private Context context;
+
 
     public UserAdapter(Context context, Cursor cursor) {
         this.context = context;
@@ -50,6 +52,50 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
             holder.userPasswordView.setText(userPassword);
 
             itemView = holder.itemView.findViewById(R.id.editButton);
+            delete = holder.itemView.findViewById((R.id.delete));
+            delete.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    // Display AlertDialog to ask for confirmation
+                    new AlertDialog.Builder(context)
+                            .setTitle("Delete Account")
+                            .setMessage("Are you sure you want to delete your account?")
+                            .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int id) {
+                                    // Get user ID from SharedPreferences and DatabaseHelper
+                                    SharedPreferences sharedPreferences = context.getSharedPreferences("PREFERENCE", MODE_PRIVATE);
+                                    String loggedInUsername = sharedPreferences.getString("username", "");
+                                    MyDatabaseHelper myDatabaseHelper = new MyDatabaseHelper(context);
+                                    int userId = myDatabaseHelper.getUserId(loggedInUsername);
+
+                                    // Delete user record from the database and save the result in "success"
+                                    boolean success = myDatabaseHelper.deleteUser(userId);
+
+                                    if (success) {
+                                        // Get all user conversions from the database and set a new cursor
+                                        Cursor newCursor = myDatabaseHelper.getAllUserConversions(userId);
+                                        swapCursor(newCursor);
+                                        notifyDataSetChanged();
+
+                                        // Navigate to another activity, such as the login activity
+                                        Intent intent = new Intent(context, SignUp.class);
+                                        context.startActivity(intent);
+                                    } else {
+                                        // Display a Toast message that the record couldn't be deleted
+                                        Toast.makeText(context, "Не успяхте да изтриете профила", Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            })
+                            .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int id) {
+                                    // If the user clicks "No," just close the AlertDialog
+                                    dialog.cancel();
+                                }
+                            })
+                            .show();
+                }
+            });
+
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {

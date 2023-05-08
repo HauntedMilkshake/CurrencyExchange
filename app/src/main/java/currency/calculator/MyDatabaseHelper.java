@@ -99,11 +99,25 @@ public class MyDatabaseHelper extends SQLiteOpenHelper {
         return result > 0;
     }
 
-    public boolean deleteUser(int id) {
+    public boolean deleteUser(int userId) {
         SQLiteDatabase db = this.getWritableDatabase();
-        int result = db.delete("users", "_id=?", new String[]{String.valueOf(id)});
-        return result > 0;
+
+        // Delete user's conversions
+        int deletedConversions = db.delete("conversions", "user_id = ?", new String[]{String.valueOf(userId)});
+        int deleteFavourites = db.delete("favourites", "user_id=?", new String[]{String.valueOf(userId)});
+
+        // Delete the user
+        int deletedUser = db.delete("users", "_id = ?", new String[]{String.valueOf(userId)});
+
+        // Check if the user was deleted successfully
+        if (deletedUser > 0) {
+            return true;
+        } else {
+            return false;
+        }
     }
+
+
     //извличане на id за потребителя
     public int getUserId(String username) {
         SQLiteDatabase db = this.getReadableDatabase();
